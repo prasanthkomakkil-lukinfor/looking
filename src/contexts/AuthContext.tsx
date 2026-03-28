@@ -72,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   code: code,
   expires_at: expiresAt,
 
-      if (error) {
+  if (error) {
   console.error("SUPABASE ERROR:", error);
   alert(error.message);
   throw error;
