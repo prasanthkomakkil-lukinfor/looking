@@ -1,0 +1,62 @@
+{
+  "name": "LookingFor.in - Reverse Classifieds",
+  "short_name": "LookingFor",
+  "description": "Post what you need. Let providers come to you. You control who contacts you.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#000000",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%23000' width='192' height='192'/><text x='50%' y='50%' font-size='80' font-weight='bold' fill='%23fff' text-anchor='middle' dominant-baseline='middle' font-family='Arial'>LF</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23000' width='512' height='512'/><text x='50%' y='50%' font-size='200' font-weight='bold' fill='%23fff' text-anchor='middle' dominant-baseline='middle' font-family='Arial'>LF</text></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business"],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'><rect fill='%23f3f4f6' width='540' height='720'/><text x='270' y='360' font-size='60' font-weight='bold' fill='%23000' text-anchor='middle' dominant-baseline='middle'>LookingFor.in</text></svg>",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Post Requirement",
+      "short_name": "Post",
+      "description": "Quickly post what you're looking for",
+      "url": "/?action=create-post",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><circle cx='48' cy='48' r='45' fill='%2310b981'/><text x='48' y='48' font-size='50' fill='%23fff' text-anchor='middle' dominant-baseline='middle'>+</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "View Chats",
+      "short_name": "Chats",
+      "description": "Check your chat requests",
+      "url": "/?action=chats",
+      "icons": [
+        {
+          "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 96 96'><circle cx='48' cy='48' r='45' fill='%233b82f6'/><text x='48' y='48' font-size='50' fill='%23fff' text-anchor='middle' dominant-baseline='middle'>💬</text></svg>",
+          "sizes": "96x96",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
