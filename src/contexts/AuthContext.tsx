@@ -76,16 +76,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           expires_at: expiresAt.toISOString(),
         });
 
-      if (error) {
-        console.error("SUPABASE ERROR:", error);
-        return{ success: false, error:
-          error.message };
-      }
+if (error) {
+  console.error("SUPABASE ERROR:", error);
+  return { success: false, error: error.message };
+}
 
-      const message = `Your OTP is: ${code}`;
-      const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
+alert(`Your OTP is ${code}`);   // ✅ ADD THIS
 
-      return { success: true, whatsappUrl };
+const message = `Your OTP is: ${code}`;
+const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
+
+return { success: true, whatsappUrl };
 
     } catch (err) {
       return {
