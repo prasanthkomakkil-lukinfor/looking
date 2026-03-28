@@ -78,11 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (error) {
         console.error("SUPABASE ERROR:", error);
-        alert(error.message);
-        throw error;
+        return{ success: false, error:
+          error.message };
       }
 
-      const message = `Your LookingFor.in login code is: ${code}`;
+      const message = `Your OTP is: ${code}`;
       const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
 
       return { success: true, whatsappUrl };
