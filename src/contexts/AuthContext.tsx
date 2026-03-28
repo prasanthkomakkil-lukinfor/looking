@@ -72,7 +72,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   code: code,
   expires_at: expiresAt,
 
-      if (error) throw error;
+      if (error) {
+  console.error("SUPABASE ERROR:", error);
+  alert(error.message);
+  throw error;
+}
 
       const message = `Your LookingFor.in login code is: ${code}`;
       const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
