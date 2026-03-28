@@ -57,44 +57,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // ✅ SEND OTP
-  const sendOTP = async (phoneNumber: string): Promise<{ success: boolean; error?: string; whatsappUrl?: string }> => {
-    try {
-      const formattedPhone = phoneNumber.replace(/\D/g, '');
+const sendOTP = async (phoneNumber: string) => {
+  try {
+    const formattedPhone = phoneNumber.replace(/\D/g, '');
 
-      if (formattedPhone.length !== 10) {
-        return { success: false, error: 'Please enter a valid 10-digit phone number' };
-      }
-
-      const code = Math.floor(1000 + Math.random() * 9000).toString();
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
-
-      const { error } = await supabase
-        .from('otp_verifications')
-        .insert({
-          phone: formattedPhone,
-          code: code,
-          expires_at: expiresAt.toISOString(),
-        });
-
-if (error) {
-  console.error("SUPABASE ERROR:", error);
-  return { success: false, error: error.message };
-}
-
-alert(`Your OTP is ${code}`);   // ✅ ADD THIS
-
-const message = `Your OTP is: ${code}`;
-const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
-
-return { success: true, whatsappUrl };
-
-    } catch (err) {
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : 'Failed to generate code'
-      };
+    if (formattedPhone.length !== 10) {
+      return { success: false, error: 'Invalid number' };
     }
-  };
+
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+
+    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+    const { error } = await supabase
+      .from('otp_verifications')
+      .insert({
+        phone: formattedPhone,
+        code: code,
+        expires_at: expiresAt.toISOString(),
+      });
+
+    if (error) {
+      console.error("SUPABASE ERROR:", error);
+      alert("DB ERROR: " + error.message);
+      return { success: false, error: error.message };
+    }
+
+    // 🔥 FORCE SUCCESS UI
+    alert("OTP GENERATED: " + code);
+
+    const whatsappUrl = `https://wa.me/91${formattedPhone}?text=Your OTP is ${code}`;
+
+    return { success: true, whatsappUrl };
+
+  } catch (err) {
+    console.error("FULL ERROR:", err);
+    alert("CATCH ERROR");
+    return { success: false, error: 'Failed to generate code' };
+  }
+};
 
   // ✅ VERIFY OTP
   const verifyOTP = async (phoneNumber: string, code: string): Promise<{ success: boolean; error?: string }> => {
