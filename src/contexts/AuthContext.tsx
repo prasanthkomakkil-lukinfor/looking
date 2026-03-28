@@ -66,12 +66,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
       const { error } = await supabase
-        .from('whatsapp_verifications')
-        .insert({
-          phone_number: formattedPhone,
-          verification_code: code,
-          expires_at: expiresAt.toISOString(),
-        });
+        .from('otp_verifications')
+.insert({
+  phone: formattedPhone,
+  code: code,
+  expires_at: expiresAt.toISOString(),
+});
 
       if (error) throw error;
 
