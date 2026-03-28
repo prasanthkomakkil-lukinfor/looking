@@ -57,25 +57,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const sendOTP = async (phoneNumber: string): Promise<{ success: boolean; error?: string; whatsappUrl?: string }> => {
     try {
-      const formattedPhone = phoneNumber.replace(/\D/g, '');
-      if (formattedPhone.length !== 10) {
-        return { success: false, error: 'Please enter a valid 10-digit phone number' };
-      }
+  const formattedPhone = phoneNumber.replace(/\D/g, '');
 
-      const code = Math.floor(1000 + Math.random() * 9000).toString();
-      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+  if (formattedPhone.length !== 10) {
+    return { success: false, error: 'Please enter a valid 10-digit phone number' };
+  }
 
-      const { error } = await supabase
-        .from('otp_verifications')
-.insert({
-  phone: formattedPhone,
-  code: code,
-  expires_at: expiresAt,
+  const code = Math.floor(1000 + Math.random() * 9000).toString();
+  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+  const { error } = await supabase
+    .from('otp_verifications')
+    .insert({
+      phone: formattedPhone,
+      code: code,
+      expires_at: expiresAt,
+    });
 
   if (error) {
-  console.error("SUPABASE ERROR:", error);
-  alert(error.message);
-  throw error;
+    console.error("SUPABASE ERROR:", error);
+    alert(error.message);
+    throw error;
+  }
+
+  const message = `Your LookingFor.in login code is: ${code}`;
+  const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
+
+  return { success: true, whatsappUrl };
+
+} catch (err) {
+  return {
+    success: false,
+    error: err instanceof Error ? err.message : 'Failed to generate code'
+  };
 }
 
       const message = `Your LookingFor.in login code is: ${code}`;
