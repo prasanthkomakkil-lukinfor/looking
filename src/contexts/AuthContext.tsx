@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .insert({
           phone: formattedPhone,
           code: code,
-          expires_at: expiresAt,
+          expires_at: expiresAt.toISOString(),
         });
 
       if (error) {
