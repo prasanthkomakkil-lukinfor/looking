@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -55,61 +56,55 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ✅ SEND OTP
   const sendOTP = async (phoneNumber: string): Promise<{ success: boolean; error?: string; whatsappUrl?: string }> => {
     try {
-  const formattedPhone = phoneNumber.replace(/\D/g, '');
+      const formattedPhone = phoneNumber.replace(/\D/g, '');
 
-  if (formattedPhone.length !== 10) {
-    return { success: false, error: 'Please enter a valid 10-digit phone number' };
-  }
+      if (formattedPhone.length !== 10) {
+        return { success: false, error: 'Please enter a valid 10-digit phone number' };
+      }
 
-  const code = Math.floor(1000 + Math.random() * 9000).toString();
-  const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+      const code = Math.floor(1000 + Math.random() * 9000).toString();
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
-  const { error } = await supabase
-    .from('otp_verifications')
-    .insert({
-      phone: formattedPhone,
-      code: code,
-      expires_at: expiresAt,
-    });
+      const { error } = await supabase
+        .from('otp_verifications')
+        .insert({
+          phone: formattedPhone,
+          code: code,
+          expires_at: expiresAt,
+        });
 
-  if (error) {
-    console.error("SUPABASE ERROR:", error);
-    alert(error.message);
-    throw error;
-  }
-
-  const message = `Your LookingFor.in login code is: ${code}`;
-  const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
-
-  return { success: true, whatsappUrl };
-
-} catch (err) {
-  return {
-    success: false,
-    error: err instanceof Error ? err.message : 'Failed to generate code'
-  };
-}
+      if (error) {
+        console.error("SUPABASE ERROR:", error);
+        alert(error.message);
+        throw error;
+      }
 
       const message = `Your LookingFor.in login code is: ${code}`;
       const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
 
       return { success: true, whatsappUrl };
+
     } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : 'Failed to generate code' };
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Failed to generate code'
+      };
     }
   };
 
+  // ✅ VERIFY OTP
   const verifyOTP = async (phoneNumber: string, code: string): Promise<{ success: boolean; error?: string }> => {
     try {
       const formattedPhone = phoneNumber.replace(/\D/g, '');
 
       const { data: codeData, error: codeError } = await supabase
-        .from('whatsapp_verifications')
+        .from('otp_verifications')
         .select('*')
-        .eq('phone_number', formattedPhone)
-        .eq('verification_code', code)
+        .eq('phone', formattedPhone)
+        .eq('code', code)
         .gt('expires_at', new Date().toISOString())
         .order('created_at', { ascending: false })
         .maybeSingle();
@@ -148,6 +143,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       return { success: false, error: 'Failed to authenticate' };
+
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Verification failed' };
     }
