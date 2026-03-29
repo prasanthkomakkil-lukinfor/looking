@@ -121,8 +121,6 @@ const verifyOTP = async (phoneNumber: string, inputCode: string) => {
 
     const record = data[0];
 
-    // ✅ FIXED expiry check
-const now = Date.now();
 // ✅ FIXED expiry check
 const now = Date.now();
 const expiry = new Date(record.expires_at).getTime();
