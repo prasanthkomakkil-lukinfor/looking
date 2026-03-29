@@ -32,19 +32,25 @@ export function WhatsAppLogin({ onLoginSuccess }: WhatsAppLoginProps) {
     setLoading(false);
   };
 
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+const handleVerify = async () => {
+  setLoading(true);
+  setError('');
 
-    const result = await verifyOTP(phoneNumber, code);
-    if (result.success) {
-      onLoginSuccess();
-    } else {
-      setError(result.error || 'Invalid code');
-    }
-    setLoading(false);
-  };
+  const result = await verifyOTP(phoneNumber, code);
+
+  console.log("VERIFY RESULT:", result); // 👈 VERY IMPORTANT
+
+  if (result.success) {
+    alert("Login successful ✅");
+
+    // 👉 THIS IS THE MISSING PART
+    onLoginSuccess();  // or redirect
+  } else {
+    setError(result.error || 'Verification failed');
+  }
+
+  setLoading(false);
+};
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-blue-50 to-gray-50 flex items-center justify-center p-4">
