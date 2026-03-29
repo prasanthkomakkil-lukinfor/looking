@@ -57,18 +57,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   // ✅ SEND OTP
+// ================= SEND OTP =================
 const sendOTP = async (phoneNumber: string) => {
   try {
     const formattedPhone = phoneNumber.replace(/\D/g, '');
 
     if (formattedPhone.length !== 10) {
-      return { success: false, error: 'Invalid number' };
+      return { success: false, error: 'Please enter a valid 10-digit phone number' };
     }
 
     const code = Math.floor(1000 + Math.random() * 9000).toString();
 
+    // ✅ 5 minutes expiry
     const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
+    // ✅ Save OTP
     const { error } = await supabase
       .from('otp_verifications')
       .insert({
@@ -79,34 +82,32 @@ const sendOTP = async (phoneNumber: string) => {
 
     if (error) {
       console.error("SUPABASE ERROR:", error);
-      alert("DB ERROR: " + error.message);
       return { success: false, error: error.message };
     }
 
-    // 🔥 FORCE SUCCESS UI
-    alert("OTP GENERATED: " + code);
-
-    const whatsappUrl = `https://wa.me/91${formattedPhone}?text=Your OTP is ${code}`;
+    // ✅ WhatsApp message
+    const message = `Your LookingFor.in login code is: ${code}`;
+    const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
 
     return { success: true, whatsappUrl };
 
-  } catch (err) {
-    console.error("FULL ERROR:", err);
-    alert("CATCH ERROR");
+  } catch (err: any) {
+    console.error("SEND OTP ERROR:", err);
     return { success: false, error: 'Failed to generate code' };
   }
 };
 
-  // ✅ VERIFY OTP
+
+// ================= VERIFY OTP =================
 const verifyOTP = async (phoneNumber: string, inputCode: string) => {
   try {
     const formattedPhone = phoneNumber.replace(/\D/g, '');
 
+    // ✅ ALWAYS GET LATEST OTP
     const { data, error } = await supabase
       .from('otp_verifications')
       .select('*')
       .eq('phone', formattedPhone)
-      .eq('code', inputCode)
       .order('created_at', { ascending: false })
       .limit(1);
 
@@ -116,20 +117,23 @@ const verifyOTP = async (phoneNumber: string, inputCode: string) => {
     }
 
     if (!data || data.length === 0) {
-      return { success: false, error: 'Invalid OTP' };
+      return { success: false, error: 'No OTP found' };
     }
 
     const record = data[0];
 
-// ✅ FIXED expiry check
-const now = new Date();
-const expiry = new Date(record.expires_at);
+    // ✅ CHECK CODE
+    if (record.code !== inputCode) {
+      return { success: false, error: 'Invalid OTP' };
+    }
 
-const diff = expiry.getTime() - now.getTime();
+    // ✅ CHECK EXPIRY (FIXED)
+    const now = Date.now();
+    const expiry = new Date(record.expires_at).getTime();
 
-if (diff <= 0) {
-  return { success: false, error: 'OTP expired' };
-}
+    if (now > expiry) {
+      return { success: false, error: 'OTP expired' };
+    }
 
     return { success: true };
 
@@ -138,7 +142,6 @@ if (diff <= 0) {
     return { success: false, error: 'Verification failed' };
   }
 };
-
   const updateProfile = async (name: string, primaryRole: 'seeker' | 'provider'): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: 'Not authenticated' };
 
