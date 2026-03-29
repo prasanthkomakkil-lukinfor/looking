@@ -63,36 +63,34 @@ const sendOTP = async (phoneNumber: string) => {
     const formattedPhone = phoneNumber.replace(/\D/g, '');
 
     if (formattedPhone.length !== 10) {
-      return { success: false, error: 'Please enter a valid 10-digit phone number' };
+      return { success: false, error: 'Invalid phone number' };
     }
 
     const code = Math.floor(1000 + Math.random() * 9000).toString();
 
-    // ✅ 5 minutes expiry
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    // ✅ 10 minutes expiry (for safety)
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-    // ✅ Save OTP
     const { error } = await supabase
       .from('otp_verifications')
       .insert({
         phone: formattedPhone,
         code: code,
-        expires_at: expiresAt.toISOString(),
+        expires_at: expiresAt,
       });
 
     if (error) {
-      console.error("SUPABASE ERROR:", error);
+      console.error("SEND OTP ERROR:", error);
       return { success: false, error: error.message };
     }
 
-    // ✅ WhatsApp message
     const message = `Your LookingFor.in login code is: ${code}`;
     const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
 
     return { success: true, whatsappUrl };
 
-  } catch (err: any) {
-    console.error("SEND OTP ERROR:", err);
+  } catch (err) {
+    console.error("SEND OTP CATCH:", err);
     return { success: false, error: 'Failed to generate code' };
   }
 };
@@ -103,7 +101,7 @@ const verifyOTP = async (phoneNumber: string, inputCode: string) => {
   try {
     const formattedPhone = phoneNumber.replace(/\D/g, '');
 
-    // ✅ ALWAYS GET LATEST OTP
+    // ✅ GET LATEST OTP ONLY
     const { data, error } = await supabase
       .from('otp_verifications')
       .select('*')
@@ -127,11 +125,15 @@ const verifyOTP = async (phoneNumber: string, inputCode: string) => {
       return { success: false, error: 'Invalid OTP' };
     }
 
-    // ✅ CHECK EXPIRY (FIXED)
-    const now = Date.now();
-    const expiry = new Date(record.expires_at).getTime();
+    // ✅ CHECK EXPIRY USING SUPABASE (NO TIMEZONE ISSUES)
+    const { data: validOtp } = await supabase
+      .from('otp_verifications')
+      .select('id')
+      .eq('id', record.id)
+      .gt('expires_at', new Date().toISOString())
+      .single();
 
-    if (now > expiry) {
+    if (!validOtp) {
       return { success: false, error: 'OTP expired' };
     }
 
