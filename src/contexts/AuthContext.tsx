@@ -98,58 +98,41 @@ const sendOTP = async (phoneNumber: string) => {
 };
 
   // ✅ VERIFY OTP
-  const verifyOTP = async (phoneNumber: string, code: string): Promise<{ success: boolean; error?: string }> => {
-    try {
-      const formattedPhone = phoneNumber.replace(/\D/g, '');
+const verifyOTP = async (phoneNumber: string, inputCode: string) => {
+  try {
+    const formattedPhone = phoneNumber.replace(/\D/g, '');
 
-      const { data: codeData, error: codeError } = await supabase
-        .from('otp_verifications')
-        .select('*')
-        .eq('phone', formattedPhone)
-        .eq('code', code)
-        .gt('expires_at', new Date().toISOString())
-        .order('created_at', { ascending: false })
-        .maybeSingle();
+    const { data, error } = await supabase
+      .from('otp_verifications')
+      .select('*')
+      .eq('phone', formattedPhone)
+      .eq('code', inputCode)
+      .order('expires_at', { ascending: false })
+      .limit(1);
 
-      if (codeError || !codeData) {
-        return { success: false, error: 'Invalid or expired code' };
-      }
-
-      let { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('phone_number', formattedPhone)
-        .maybeSingle();
-
-      if (userError) throw userError;
-
-      if (!userData) {
-        const { data: newUser, error: createError } = await supabase
-          .from('users')
-          .insert({
-            phone_number: formattedPhone,
-            primary_role: 'seeker',
-            is_verified: true,
-          })
-          .select()
-          .maybeSingle();
-
-        if (createError) throw createError;
-        userData = newUser;
-      }
-
-      if (userData) {
-        setUser(userData);
-        localStorage.setItem('lookingfor_user_id', userData.id);
-        return { success: true };
-      }
-
-      return { success: false, error: 'Failed to authenticate' };
-
-    } catch (err) {
-      return { success: false, error: err instanceof Error ? err.message : 'Verification failed' };
+    if (error) {
+      console.error("VERIFY ERROR:", error);
+      return { success: false, error: error.message };
     }
-  };
+
+    if (!data || data.length === 0) {
+      return { success: false, error: 'Invalid OTP' };
+    }
+
+    const record = data[0];
+
+    // Optional expiry check (safe)
+    if (new Date(record.expires_at) < new Date()) {
+      return { success: false, error: 'OTP expired' };
+    }
+
+    return { success: true };
+
+  } catch (err) {
+    console.error("VERIFY CATCH:", err);
+    return { success: false, error: 'Verification failed' };
+  }
+};
 
   const updateProfile = async (name: string, primaryRole: 'seeker' | 'provider'): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: 'Not authenticated' };
