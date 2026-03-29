@@ -101,7 +101,7 @@ const verifyOTP = async (phoneNumber: string, inputCode: string) => {
   try {
     const formattedPhone = phoneNumber.replace(/\D/g, '');
 
-    // ✅ GET LATEST OTP ONLY
+    // GET LATEST OTP
     const { data, error } = await supabase
       .from('otp_verifications')
       .select('*')
@@ -109,23 +109,15 @@ const verifyOTP = async (phoneNumber: string, inputCode: string) => {
       .order('created_at', { ascending: false })
       .limit(1);
 
-    if (error) {
-      console.error("VERIFY ERROR:", error);
-      return { success: false, error: error.message };
-    }
-
-    if (!data || data.length === 0) {
-      return { success: false, error: 'No OTP found' };
-    }
+    if (error) return { success: false, error: error.message };
+    if (!data || data.length === 0) return { success: false, error: 'No OTP found' };
 
     const record = data[0];
 
-    // ✅ CHECK CODE
-    if (record.code !== inputCode) {
-      return { success: false, error: 'Invalid OTP' };
-    }
+    // CHECK CODE
+    if (record.code !== inputCode) return { success: false, error: 'Invalid OTP' };
 
-    // ✅ CHECK EXPIRY USING SUPABASE (NO TIMEZONE ISSUES)
+    // CHECK EXPIRY
     const { data: validOtp } = await supabase
       .from('otp_verifications')
       .select('id')
@@ -133,17 +125,39 @@ const verifyOTP = async (phoneNumber: string, inputCode: string) => {
       .gt('expires_at', new Date().toISOString())
       .single();
 
-    if (!validOtp) {
-      return { success: false, error: 'OTP expired' };
+    if (!validOtp) return { success: false, error: 'OTP expired' };
+
+    // ✅ FIX: Find or create user
+    let { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('phone_number', formattedPhone)
+      .maybeSingle();
+
+    if (!existingUser) {
+      // First time login — create the user
+      const { data: newUser, error: createError } = await supabase
+        .from('users')
+        .insert({ phone_number: formattedPhone, primary_role: 'seeker' })
+        .select()
+        .single();
+
+      if (createError) return { success: false, error: 'Failed to create user' };
+      existingUser = newUser;
     }
 
-    return { success: true };
+    // ✅ FIX: Save session and set user state
+    localStorage.setItem('lookingfor_user_id', existingUser.id);
+    setUser(existingUser);
 
+    return { success: true };
   } catch (err) {
     console.error("VERIFY CATCH:", err);
     return { success: false, error: 'Verification failed' };
   }
 };
+  
+  {
   const updateProfile = async (name: string, primaryRole: 'seeker' | 'provider'): Promise<{ success: boolean; error?: string }> => {
     if (!user) return { success: false, error: 'Not authenticated' };
 
