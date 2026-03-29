@@ -43,7 +43,7 @@ export function WhatsAppLogin({ onLoginSuccess }: WhatsAppLoginProps) {
 
     if (result.success) {
       alert("Login successful ✅");
-      onLoginSuccess();
+      window.location.href="/";
     } else {
       setError(result.error || 'Verification failed');
     }
