@@ -174,11 +174,14 @@ const handleVerify = async () => {
                 </div>
 
                 <button
-                  type="button"
-                  onClick={() => {
-                    window.open(whatsappUrl, '_blank');
-                  }}
-                  className="w-full text-green-600 hover:text-green-700 font-semibold py-2 text-sm"
+                <button
+  type="button"
+  onClick={handleVerify}
+  disabled={loading || code.length !== 4}
+  className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+>
+  {loading ? 'Verifying...' : 'Verify'}
+</button>
                 >
                   Resend via WhatsApp
                 </button>
