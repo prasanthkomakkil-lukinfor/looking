@@ -107,7 +107,7 @@ const verifyOTP = async (phoneNumber: string, inputCode: string) => {
       .select('*')
       .eq('phone', formattedPhone)
       .eq('code', inputCode)
-      .order('expires_at', { ascending: false })
+      .order('created_at', { ascending: false })
       .limit(1);
 
     if (error) {
