@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '../lib/supabase';
 
@@ -56,122 +55,105 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // ✅ SEND OTP
-// ================= SEND OTP =================
-const sendOTP = async (phoneNumber: string) => {
-  try {
-    const formattedPhone = phoneNumber.replace(/\D/g, '');
+  const sendOTP = async (phoneNumber: string) => {
+    try {
+      const formattedPhone = phoneNumber.replace(/\D/g, '');
+      if (formattedPhone.length !== 10) {
+        return { success: false, error: 'Invalid phone number' };
+      }
 
-    if (formattedPhone.length !== 10) {
-      return { success: false, error: 'Invalid phone number' };
+      const code = Math.floor(1000 + Math.random() * 9000).toString();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+
+      const { error } = await supabase
+        .from('otp_verifications')
+        .insert({ phone: formattedPhone, code, expires_at: expiresAt });
+
+      if (error) {
+        console.error('SEND OTP ERROR:', error);
+        return { success: false, error: error.message };
+      }
+
+      const message = `Your LookingFor.in login code is: ${code}`;
+      const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
+      return { success: true, whatsappUrl };
+    } catch (err) {
+      console.error('SEND OTP CATCH:', err);
+      return { success: false, error: 'Failed to generate code' };
     }
+  };
 
-    const code = Math.floor(1000 + Math.random() * 9000).toString();
+  const verifyOTP = async (phoneNumber: string, inputCode: string) => {
+    try {
+      const formattedPhone = phoneNumber.replace(/\D/g, '');
 
-    // ✅ 10 minutes expiry (for safety)
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      // Get latest OTP
+      const { data, error } = await supabase
+        .from('otp_verifications')
+        .select('*')
+        .eq('phone', formattedPhone)
+        .order('created_at', { ascending: false })
+        .limit(1);
 
-    const { error } = await supabase
-      .from('otp_verifications')
-      .insert({
-        phone: formattedPhone,
-        code: code,
-        expires_at: expiresAt,
-      });
+      if (error) return { success: false, error: error.message };
+      if (!data || data.length === 0) return { success: false, error: 'No OTP found' };
 
-    if (error) {
-      console.error("SEND OTP ERROR:", error);
-      return { success: false, error: error.message };
-    }
+      const record = data[0];
 
-    const message = `Your LookingFor.in login code is: ${code}`;
-    const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
+      // Check code matches
+      if (record.code !== inputCode) return { success: false, error: 'Invalid OTP' };
 
-    return { success: true, whatsappUrl };
-
-  } catch (err) {
-    console.error("SEND OTP CATCH:", err);
-    return { success: false, error: 'Failed to generate code' };
-  }
-};
-
-
-// ================= VERIFY OTP =================
-const verifyOTP = async (phoneNumber: string, inputCode: string) => {
-  try {
-    const formattedPhone = phoneNumber.replace(/\D/g, '');
-
-    // GET LATEST OTP
-    const { data, error } = await supabase
-      .from('otp_verifications')
-      .select('*')
-      .eq('phone', formattedPhone)
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (error) return { success: false, error: error.message };
-    if (!data || data.length === 0) return { success: false, error: 'No OTP found' };
-
-    const record = data[0];
-
-    // CHECK CODE
-    if (record.code !== inputCode) return { success: false, error: 'Invalid OTP' };
-
-    // CHECK EXPIRY
-    const { data: validOtp } = await supabase
-      .from('otp_verifications')
-      .select('id')
-      .eq('id', record.id)
-      .gt('expires_at', new Date().toISOString())
-      .single();
-
-    if (!validOtp) return { success: false, error: 'OTP expired' };
-
-    // ✅ FIX: Find or create user
-    let { data: existingUser } = await supabase
-      .from('users')
-      .select('*')
-      .eq('phone_number', formattedPhone)
-      .maybeSingle();
-
-    if (!existingUser) {
-      // First time login — create the user
-      const { data: newUser, error: createError } = await supabase
-        .from('users')
-        .insert({ phone_number: formattedPhone, primary_role: 'seeker' })
-        .select()
+      // Check not expired
+      const { data: validOtp } = await supabase
+        .from('otp_verifications')
+        .select('id')
+        .eq('id', record.id)
+        .gt('expires_at', new Date().toISOString())
         .single();
 
-      if (createError) return { success: false, error: 'Failed to create user' };
-      existingUser = newUser;
+      if (!validOtp) return { success: false, error: 'OTP expired' };
+
+      // ✅ Find existing user or create new one
+      let { data: existingUser } = await supabase
+        .from('users')
+        .select('*')
+        .eq('phone_number', formattedPhone)
+        .maybeSingle();
+
+      if (!existingUser) {
+        const { data: newUser, error: createError } = await supabase
+          .from('users')
+          .insert({ phone_number: formattedPhone, primary_role: 'seeker' })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('CREATE USER ERROR:', createError);
+          return { success: false, error: 'Failed to create user account' };
+        }
+        existingUser = newUser;
+      }
+
+      // ✅ Save session and update state — this triggers App.tsx to re-render
+      localStorage.setItem('lookingfor_user_id', existingUser.id);
+      setUser(existingUser);
+
+      return { success: true };
+    } catch (err) {
+      console.error('VERIFY CATCH:', err);
+      return { success: false, error: 'Verification failed' };
     }
+  };
 
-    // ✅ FIX: Save session and set user state
-    localStorage.setItem('lookingfor_user_id', existingUser.id);
-    setUser(existingUser);
-
-    return { success: true };
-  } catch (err) {
-    console.error("VERIFY CATCH:", err);
-    return { success: false, error: 'Verification failed' };
-  }
-};
-  
-  {
-  const updateProfile = async (name: string, primaryRole: 'seeker' | 'provider'): Promise<{ success: boolean; error?: string }> => {
+  const updateProfile = async (name: string, primaryRole: 'seeker' | 'provider') => {
     if (!user) return { success: false, error: 'Not authenticated' };
-
     try {
       const { error } = await supabase
         .from('users')
-        .update({
-          name: name.trim(),
-          primary_role: primaryRole,
-        })
+        .update({ name: name.trim(), primary_role: primaryRole })
         .eq('id', user.id);
 
       if (error) throw error;
-
       setUser({ ...user, name: name.trim(), primary_role: primaryRole });
       return { success: true };
     } catch (err) {
