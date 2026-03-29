@@ -121,10 +121,13 @@ const verifyOTP = async (phoneNumber: string, inputCode: string) => {
 
     const record = data[0];
 
-    // Optional expiry check (safe)
-    if (new Date(record.expires_at) < new Date()) {
-      return { success: false, error: 'OTP expired' };
-    }
+    // ✅ FIXED expiry check
+const now = Date.now();
+const expiry = new Date(record.expires_at).getTime();
+
+if (now > expiry) {
+  return { success: false, error: 'OTP expired' };
+}
 
     return { success: true };
 
