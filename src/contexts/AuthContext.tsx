@@ -5,10 +5,13 @@ interface User {
   id: string;
   phone_number: string;
   name: string | null;
+  email: string | null;
+  city: string | null;
   primary_role: 'seeker' | 'provider';
   can_be_provider: boolean;
   is_admin: boolean;
   is_verified: boolean;
+  profile_completed: boolean;
 }
 
 interface AuthContextType {
@@ -17,7 +20,7 @@ interface AuthContextType {
   sendOTP: (phoneNumber: string) => Promise<{ success: boolean; error?: string; whatsappUrl?: string }>;
   verifyOTP: (phoneNumber: string, code: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
-  updateProfile: (name: string, primaryRole: 'seeker' | 'provider') => Promise<{ success: boolean; error?: string }>;
+  updateProfile: (name: string, email: string, city: string, primaryRole: 'seeker' | 'provider') => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -145,16 +148,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const updateProfile = async (name: string, primaryRole: 'seeker' | 'provider') => {
+  const updateProfile = async (name: string, email: string, city: string, primaryRole: 'seeker' | 'provider') => {
     if (!user) return { success: false, error: 'Not authenticated' };
     try {
       const { error } = await supabase
         .from('users')
-        .update({ name: name.trim(), primary_role: primaryRole })
+        .update({
+          name: name.trim(),
+          email: email.trim(),
+          city: city.trim(),
+          primary_role: primaryRole,
+          profile_completed: true
+        })
         .eq('id', user.id);
 
       if (error) throw error;
-      setUser({ ...user, name: name.trim(), primary_role: primaryRole });
+      setUser({ ...user, name: name.trim(), email: email.trim(), city: city.trim(), primary_role: primaryRole, profile_completed: true });
       return { success: true };
     } catch (err) {
       return { success: false, error: err instanceof Error ? err.message : 'Update failed' };
