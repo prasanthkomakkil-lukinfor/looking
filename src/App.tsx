@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WhatsAppLogin } from './components/Auth/WhatsAppLogin';
 import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
+import { ProfileCompletionPage } from './components/Profile/ProfileCompletionPage';
 import { MainLayout } from './components/Layout/MainLayout';
 
 function AppContent() {
@@ -39,6 +40,10 @@ function AppContent() {
         }}
       />
     );
+  }
+
+  if (!user.profile_completed) {
+    return <ProfileCompletionPage onComplete={() => window.location.reload()} />;
   }
 
   return <MainLayout />;

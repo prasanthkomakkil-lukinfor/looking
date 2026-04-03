@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
+
+const CITIES = ['Bangalore', 'Chennai', 'Pune', 'Hyderabad', 'Cochin', 'Mumbai'];
 
 interface Subcategory {
   id: string;
@@ -109,7 +111,19 @@ export function CreatePostPage({ onPostCreated }: CreatePostPageProps) {
         <p className="text-gray-600">Let providers know what you're looking for</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-8 space-y-6">
+      <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-xl p-4 mb-6">
+        <div className="flex items-start gap-3">
+          <Shield className="text-green-600 flex-shrink-0 mt-0.5" size={20} />
+          <div>
+            <p className="text-sm font-semibold text-gray-900">You're in control</p>
+            <p className="text-xs text-gray-600 mt-1">
+              Providers must send a chat request. You approve who can contact you. No spam. No unwanted calls.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-8 space-y-6 shadow-sm">
         {/* Category Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">Category</label>
@@ -162,15 +176,18 @@ export function CreatePostPage({ onPostCreated }: CreatePostPageProps) {
             <label htmlFor="city" className="block text-sm font-medium text-gray-700 mb-2">
               City
             </label>
-            <input
+            <select
               id="city"
-              type="text"
               value={city}
               onChange={(e) => setCity(e.target.value)}
-              placeholder="e.g., Bangalore"
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               required
-            />
+            >
+              <option value="">Select city</option>
+              {CITIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-2">
