@@ -69,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
       const { error } = await supabase
-        .from('otp_verifications')
+        .from('whatsapp_verifications')
         .insert({ phone: formattedPhone, code, expires_at: expiresAt });
 
       if (error) {
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Get latest OTP
       const { data, error } = await supabase
-        .from('otp_verifications')
+        .from('whatsapp_verifications')
         .select('*')
         .eq('phone', formattedPhone)
         .order('created_at', { ascending: false })
@@ -108,7 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Check not expired
       const { data: validOtp } = await supabase
-        .from('otp_verifications')
+        .from('whatsapp_verifications')
         .select('id')
         .eq('id', record.id)
         .gt('expires_at', new Date().toISOString())
