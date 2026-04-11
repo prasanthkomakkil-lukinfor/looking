@@ -1,4 +1,4 @@
-Navigate to public → sw.js, select all, replace with:
+
 const CACHE_NAME = 'lookingfor-v2';
 const STATIC_ASSETS = ['/', '/index.html'];
 
