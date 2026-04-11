@@ -57,6 +57,7 @@ export function WhatsAppLogin({ onLoginSuccess }: WhatsAppLoginProps) {
     <div className="min-h-screen flex items-center justify-center p-4"
       style={{ background: 'linear-gradient(135deg, #e8f5e9 0%, #e0f2f1 100%)' }}>
       <div className="w-full max-w-md">
+
         <div className="text-center mb-8">
           <h1 className="text-4xl font-extrabold text-gray-900 mb-2">LookingFor</h1>
           <p className="text-gray-500 text-base">Post what you need. Stay protected.</p>
@@ -79,7 +80,9 @@ export function WhatsAppLogin({ onLoginSuccess }: WhatsAppLoginProps) {
           {step === 'phone' ? (
             <form onSubmit={handleSendCode} className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Mobile Number</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Mobile Number
+                </label>
                 <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-teal-400">
                   <span className="px-3 py-3 bg-gray-50 text-gray-500 border-r border-gray-300 text-sm font-medium">+91</span>
                   <input
@@ -99,7 +102,7 @@ export function WhatsAppLogin({ onLoginSuccess }: WhatsAppLoginProps) {
               <button
                 type="submit"
                 disabled={loading || phoneNumber.length !== 10}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-semibold text-sm transition-all disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-white font-semibold text-sm disabled:opacity-50"
                 style={{ background: '#4db6ac' }}
               >
                 <span>📱</span>
@@ -113,7 +116,9 @@ export function WhatsAppLogin({ onLoginSuccess }: WhatsAppLoginProps) {
                 📱 Code sent to <strong>+91 {phoneNumber}</strong> via WhatsApp
               </div>
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Enter 4-digit OTP</label>
+                <label className="block text-sm font-semibold text-gray-700 mb-1">
+                  Enter 4-digit OTP
+                </label>
                 <input
                   type="text"
                   value={code}
@@ -165,4 +170,3 @@ export function WhatsAppLogin({ onLoginSuccess }: WhatsAppLoginProps) {
     </div>
   );
 }
-FILE 6: src
