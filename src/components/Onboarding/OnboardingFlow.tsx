@@ -28,6 +28,7 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
       <div className="w-full max-w-md">
+
         <div className="text-center mb-8">
           <div className="text-4xl mb-3">👋</div>
           <h1 className="text-2xl font-extrabold text-gray-900">Welcome!</h1>
@@ -58,10 +59,14 @@ export function OnboardingFlow({ onComplete }: OnboardingFlowProps) {
                   key={r.value}
                   onClick={() => setRole(r.value as 'seeker' | 'provider')}
                   className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                    role === r.value ? 'border-teal-400 bg-teal-50' : 'border-gray-200 hover:border-gray-300'
+                    role === r.value
+                      ? 'border-teal-400 bg-teal-50'
+                      : 'border-gray-200 hover:border-gray-300'
                   }`}
                 >
-                  <div className={`font-semibold text-sm ${role === r.value ? 'text-teal-700' : 'text-gray-800'}`}>{r.label}</div>
+                  <div className={`font-semibold text-sm ${role === r.value ? 'text-teal-700' : 'text-gray-800'}`}>
+                    {r.label}
+                  </div>
                   <div className="text-xs text-gray-500 mt-1">{r.desc}</div>
                 </div>
               ))}
