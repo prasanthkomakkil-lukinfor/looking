@@ -10,7 +10,6 @@ function AppContent() {
 
   useEffect(() => {
     if (user) {
-      // Onboarding complete if user has a name
       const completed = user.name || localStorage.getItem(`onboarding_${user.id}`);
       setHasCompletedOnboarding(!!completed);
     }
@@ -34,7 +33,7 @@ function AppContent() {
   if (!hasCompletedOnboarding) {
     return (
       <OnboardingFlow
-        onComplete={(role) => {
+        onComplete={() => {
           localStorage.setItem(`onboarding_${user.id}`, 'true');
           setHasCompletedOnboarding(true);
         }}
