@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WhatsAppLogin } from './components/Auth/WhatsAppLogin';
 import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
-import { ProfileCompletionPage } from './components/Profile/ProfileCompletionPage';
 import { MainLayout } from './components/Layout/MainLayout';
 
 function AppContent() {
@@ -11,7 +10,8 @@ function AppContent() {
 
   useEffect(() => {
     if (user) {
-      const completed = localStorage.getItem(`onboarding_${user.id}`);
+      // Onboarding complete if user has a name
+      const completed = user.name || localStorage.getItem(`onboarding_${user.id}`);
       setHasCompletedOnboarding(!!completed);
     }
   }, [user]);
@@ -20,8 +20,8 @@ function AppContent() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-teal-500 mb-3"></div>
+          <p className="text-gray-500 text-sm">Loading...</p>
         </div>
       </div>
     );
@@ -40,10 +40,6 @@ function AppContent() {
         }}
       />
     );
-  }
-
-  if (!user.profile_completed) {
-    return <ProfileCompletionPage onComplete={() => window.location.reload()} />;
   }
 
   return <MainLayout />;
