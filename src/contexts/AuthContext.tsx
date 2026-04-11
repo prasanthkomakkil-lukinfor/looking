@@ -59,16 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const formattedPhone = phoneNumber.replace(/\D/g, '');
       if (formattedPhone.length !== 10) return { success: false, error: 'Invalid phone number' };
-
       const code = Math.floor(1000 + Math.random() * 9000).toString();
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
       const { error } = await supabase
         .from('otp_verifications')
         .insert({ phone: formattedPhone, code, expires_at: expiresAt });
-
       if (error) return { success: false, error: error.message };
-
       const message = `Your LookingFor.in login code is: ${code}`;
       const whatsappUrl = `https://wa.me/91${formattedPhone}?text=${encodeURIComponent(message)}`;
       return { success: true, whatsappUrl };
@@ -80,30 +76,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifyOTP = async (phoneNumber: string, inputCode: string) => {
     try {
       const formattedPhone = phoneNumber.replace(/\D/g, '');
-
       const { data, error } = await supabase
         .from('otp_verifications')
         .select('*')
         .eq('phone', formattedPhone)
         .order('created_at', { ascending: false })
         .limit(1);
-
       if (error) return { success: false, error: error.message };
-      if (!data || data.length === 0) return { success: false, error: 'No OTP found. Please request a new one.' };
-
+      if (!data || data.length === 0) return { success: false, error: 'No OTP found. Request a new one.' };
       const record = data[0];
-      if (record.code !== inputCode) return { success: false, error: 'Invalid OTP. Please try again.' };
-
+      if (record.code !== inputCode) return { success: false, error: 'Invalid OTP. Try again.' };
       const { data: validOtp } = await supabase
         .from('otp_verifications')
         .select('id')
         .eq('id', record.id)
         .gt('expires_at', new Date().toISOString())
         .single();
+      if (!validOtp) return { success: false, error: 'OTP expired. Request a new one.' };
 
-      if (!validOtp) return { success: false, error: 'OTP expired. Please request a new one.' };
-
-      // Find or create user
       let { data: existingUser } = await supabase
         .from('users')
         .select('*')
@@ -111,7 +101,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .maybeSingle();
 
       if (!existingUser) {
-        // Try phone_number column as fallback
         const { data: byPhoneNumber } = await supabase
           .from('users')
           .select('*')
@@ -133,11 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           })
           .select()
           .single();
-
-        if (createError) {
-          console.error('CREATE USER ERROR:', createError);
-          return { success: false, error: 'Failed to create account: ' + createError.message };
-        }
+        if (createError) return { success: false, error: 'Failed to create account: ' + createError.message };
         existingUser = newUser;
       }
 
@@ -145,8 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(existingUser);
       return { success: true };
     } catch (err) {
-      console.error('VERIFY CATCH:', err);
-      return { success: false, error: 'Verification failed. Please try again.' };
+      return { success: false, error: 'Verification failed. Try again.' };
     }
   };
 
