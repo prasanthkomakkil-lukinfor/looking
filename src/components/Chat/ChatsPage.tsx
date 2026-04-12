@@ -1,63 +1,46 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { MessageSquare, CheckCircle, XCircle } from 'lucide-react';
+import { MessageSquare, Clock, CheckCircle, XCircle, Shield } from 'lucide-react';
 
 interface ChatRequest {
   id: string;
-  status: string;
-  intro_message: string;
+  status: 'pending' | 'accepted' | 'rejected' | 'blocked';
+  message: string;
   created_at: string;
-  requirement: {
-    title: string;
-  };
-  provider: {
-    name: string | null;
-  };
-  seeker: {
-    name: string | null;
-  };
+  requirement_id: string;
+  requester_id: string;
+  requirement: { title: string; category: string } | null;
+  requester: { name: string | null; phone: string | null } | null;
 }
 
 export function ChatsPage() {
   const { user } = useAuth();
-  const [chatRequests, setChatRequests] = useState<ChatRequest[]>([]);
+  const [requests, setRequests] = useState<ChatRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'pending' | 'accepted' | 'all'>('pending');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'pending' | 'accepted'>('all');
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    loadChats();
-  }, [filter]);
+    loadRequests();
+  }, [user]);
 
-  const loadChats = async () => {
+  const loadRequests = async () => {
     if (!user) return;
     setLoading(true);
-
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from('chat_requests')
         .select(`
           *,
-          requirement: requirement_id (
-            title
-          ),
-          provider: provider_id (
-            name
-          ),
-          seeker: seeker_id (
-            name
-          )
+          requirement:requirement_id (title, category),
+          requester:requester_id (name, phone)
         `)
-        .or(`seeker_id.eq.${user.id},provider_id.eq.${user.id}`)
+        .or(`requester_id.eq.${user.id},owner_id.eq.${user.id}`)
         .order('created_at', { ascending: false });
 
-      if (filter !== 'all') {
-        query = query.eq('status', filter.toUpperCase());
-      }
-
-      const { data, error } = await query;
       if (error) throw error;
-      setChatRequests(data || []);
+      setRequests(data || []);
     } catch (err) {
       console.error('Error loading chats:', err);
     } finally {
@@ -65,115 +48,168 @@ export function ChatsPage() {
     }
   };
 
-  const handleUpdateStatus = async (id: string, newStatus: string) => {
+  const handleAction = async (requestId: string, status: 'accepted' | 'rejected' | 'blocked') => {
+    setActionLoading(requestId);
     try {
       const { error } = await supabase
         .from('chat_requests')
-        .update({ status: newStatus })
-        .eq('id', id);
-
+        .update({ status })
+        .eq('id', requestId);
       if (error) throw error;
-      loadChats();
+      await loadRequests();
     } catch (err) {
-      console.error('Error updating chat status:', err);
+      console.error('Error updating request:', err);
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'PENDING':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'ACCEPTED':
-        return 'bg-green-100 text-green-800';
-      case 'REJECTED':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const statusConfig = {
+    pending:  { label: 'Pending',  color: 'bg-amber-100 text-amber-700',  icon: Clock },
+    accepted: { label: 'Accepted', color: 'bg-teal-100 text-teal-700',    icon: CheckCircle },
+    rejected: { label: 'Rejected', color: 'bg-red-100 text-red-600',      icon: XCircle },
+    blocked:  { label: 'Blocked',  color: 'bg-gray-100 text-gray-500',    icon: XCircle },
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
+  const filtered = requests.filter(r =>
+    activeFilter === 'all' ? true : r.status === activeFilter
+  );
+
+  const pendingCount = requests.filter(r => r.status === 'pending').length;
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Chat Requests</h2>
-        <p className="text-gray-600">Manage your chat requests and conversations</p>
-      </div>
-
-      <div className="flex gap-3 mb-6">
-        {(['pending', 'accepted', 'all'] as const).map((f) => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`px-6 py-2 rounded-lg font-medium transition-all ${
-              filter === f
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 border border-gray-300'
-            }`}
-          >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
-          </button>
-        ))}
-      </div>
-
-      {chatRequests.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl">
-          <MessageSquare size={48} className="mx-auto mb-4 text-gray-400" />
-          <p className="text-gray-600">No chat requests yet</p>
+    <div className="flex flex-col min-h-full">
+      {/* Header */}
+      <div className="bg-white px-4 pt-5 pb-3 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-xl font-extrabold text-gray-900">Chat Requests</h1>
+          {pendingCount > 0 && (
+            <span className="bg-teal-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {pendingCount} new
+            </span>
+          )}
         </div>
-      ) : (
-        <div className="space-y-4">
-          {chatRequests.map((chat) => (
-            <div key={chat.id} className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(chat.status)}`}>
-                      {chat.status}
-                    </span>
-                  </div>
-                  <h3 className="text-lg font-bold text-gray-900">{chat.requirement.title}</h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {user?.id === chat.seeker_id
-                      ? `From: ${chat.provider.name || 'Provider'}`
-                      : `To: ${chat.seeker.name || 'Seeker'}`}
-                  </p>
-                </div>
-              </div>
+        <p className="text-xs text-gray-400 mb-3">You decide who can chat with you</p>
 
-              <p className="text-gray-700 mb-4">{chat.intro_message}</p>
-
-              {user?.id === chat.seeker_id && chat.status === 'PENDING' && (
-                <div className="flex gap-3 pt-4 border-t border-gray-100">
-                  <button
-                    onClick={() => handleUpdateStatus(chat.id, 'ACCEPTED')}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
-                  >
-                    <CheckCircle size={18} />
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => handleUpdateStatus(chat.id, 'REJECTED')}
-                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
-                  >
-                    <XCircle size={18} />
-                    Reject
-                  </button>
-                </div>
-              )}
-            </div>
+        {/* Filters */}
+        <div className="flex gap-2">
+          {[
+            { id: 'all', label: `All (${requests.length})` },
+            { id: 'pending', label: `Pending (${pendingCount})` },
+            { id: 'accepted', label: 'Active' },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setActiveFilter(f.id as any)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                activeFilter === f.id ? 'text-white' : 'bg-gray-100 text-gray-600'
+              }`}
+              style={activeFilter === f.id ? { background: '#4db6ac' } : {}}
+            >
+              {f.label}
+            </button>
           ))}
         </div>
-      )}
+      </div>
+
+      {/* Trust signal */}
+      <div className="flex items-center gap-2 px-4 py-2 bg-teal-50 text-xs text-teal-700">
+        <Shield size={12} /> REQUEST → APPROVAL → CHAT. You are always in control.
+      </div>
+
+      {/* List */}
+      <div className="flex-1 px-4 py-3 space-y-3">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+            <MessageSquare size={32} className="text-gray-200 mx-auto mb-3" />
+            <p className="text-gray-400 text-sm">No chat requests yet</p>
+            <p className="text-gray-300 text-xs mt-1">
+              {user?.primary_role === 'seeker'
+                ? 'Providers will send requests when they see your posts'
+                : 'Browse requirements and send chat requests'}
+            </p>
+          </div>
+        ) : (
+          filtered.map((req) => {
+            const cfg = statusConfig[req.status];
+            const StatusIcon = cfg.icon;
+            const isOwner = req.requester_id !== user?.id;
+
+            return (
+              <div key={req.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+                {/* Top row */}
+                <div className="flex items-start justify-between mb-2">
+                  <div>
+                    <p className="font-bold text-sm text-gray-900">
+                      {isOwner
+                        ? (req.requester?.name || 'Anonymous Provider')
+                        : 'Your Request'}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Re: {req.requirement?.title || 'Requirement'}
+                    </p>
+                  </div>
+                  <span className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${cfg.color}`}>
+                    <StatusIcon size={11} /> {cfg.label}
+                  </span>
+                </div>
+
+                {/* Message */}
+                <p className="text-xs text-gray-500 bg-gray-50 rounded-lg p-2 mb-3 italic">
+                  "{req.message}"
+                </p>
+
+                {/* Actions for pending requests (only if you're the seeker/owner) */}
+                {req.status === 'pending' && isOwner && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleAction(req.id, 'accepted')}
+                      disabled={actionLoading === req.id}
+                      className="flex-1 py-2 rounded-lg text-white text-xs font-semibold disabled:opacity-50"
+                      style={{ background: '#4db6ac' }}
+                    >
+                      ✓ Accept
+                    </button>
+                    <button
+                      onClick={() => handleAction(req.id, 'rejected')}
+                      disabled={actionLoading === req.id}
+                      className="flex-1 py-2 rounded-lg border border-gray-200 text-gray-600 text-xs font-semibold disabled:opacity-50"
+                    >
+                      ✗ Reject
+                    </button>
+                    <button
+                      onClick={() => handleAction(req.id, 'blocked')}
+                      disabled={actionLoading === req.id}
+                      className="px-3 py-2 rounded-lg bg-red-50 text-red-500 text-xs font-semibold disabled:opacity-50"
+                    >
+                      Block
+                    </button>
+                  </div>
+                )}
+
+                {req.status === 'accepted' && (
+                  <button
+                    className="w-full py-2 rounded-lg text-white text-xs font-semibold"
+                    style={{ background: '#4db6ac' }}
+                  >
+                    Open Chat →
+                  </button>
+                )}
+
+                {req.status === 'pending' && !isOwner && (
+                  <p className="text-xs text-amber-600 text-center">
+                    ⏳ Waiting for approval...
+                  </p>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }
