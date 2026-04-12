@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { MapPin, DollarSign, Eye, Lock, MessageSquare, Shield } from 'lucide-react';
+import { MapPin, Lock, MessageSquare, Shield, Search } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { ChatRequestModal } from '../Chat/ChatRequestModal';
 
 interface Requirement {
   id: string;
@@ -15,20 +14,16 @@ interface Requirement {
   budget_min: number | null;
   budget_max: number | null;
   is_anonymous: boolean;
-  views_count: number;
   created_at: string;
-  user: {
-    id: string;
-    name: string | null;
-  };
+  user_id: string;
 }
 
 export function HomePage() {
   const { user } = useAuth();
   const [requirements, setRequirements] = useState<Requirement[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedRequirement, setSelectedRequirement] = useState<Requirement | null>(null);
   const [filter, setFilter] = useState<'all' | 'real_estate' | 'services'>('all');
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     loadRequirements();
@@ -39,13 +34,7 @@ export function HomePage() {
     try {
       let query = supabase
         .from('requirements')
-        .select(`
-          *,
-          user:user_id (
-            id,
-            name
-          )
-        `)
+        .select('*')
         .eq('status', 'active')
         .order('created_at', { ascending: false });
 
@@ -54,7 +43,6 @@ export function HomePage() {
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
       setRequirements(data || []);
     } catch (err) {
@@ -65,169 +53,147 @@ export function HomePage() {
   };
 
   const formatBudget = (min: number | null, max: number | null) => {
-    if (!min && !max) return 'Budget not specified';
+    if (!min && !max) return null;
     if (min && max) return `₹${min.toLocaleString()} - ₹${max.toLocaleString()}`;
     if (min) return `₹${min.toLocaleString()}+`;
     return `Up to ₹${max?.toLocaleString()}`;
   };
 
   const getTimeAgo = (date: string) => {
-    const now = new Date();
-    const past = new Date(date);
-    const diffInMinutes = Math.floor((now.getTime() - past.getTime()) / (1000 * 60));
-
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    const diffInHours = Math.floor(diffInMinutes / 60);
-    if (diffInHours < 24) return `${diffInHours}h ago`;
-    const diffInDays = Math.floor(diffInHours / 24);
-    return `${diffInDays}d ago`;
+    const diff = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
+    if (diff < 60) return `${diff}m ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return `${Math.floor(diff / 1440)}d ago`;
   };
 
-  if (loading) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading requirements...</p>
-        </div>
-      </div>
-    );
-  }
+  const filtered = requirements.filter(r =>
+    search === '' ||
+    r.title.toLowerCase().includes(search.toLowerCase()) ||
+    r.city.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Browse Requirements</h2>
-        <p className="text-gray-600 mb-4">
-          {user?.primary_role === 'provider'
-            ? 'Find requirements and send chat requests to connect with seekers'
-            : 'View all posted requirements'}
-        </p>
-
-        {/* Trust Signals */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-          <div className="flex items-center gap-2 text-green-700 bg-green-50 px-3 py-2 rounded-lg">
-            <Shield size={16} />
-            <span>Seekers approve all contacts</span>
-          </div>
-          <div className="flex items-center gap-2 text-green-700 bg-green-50 px-3 py-2 rounded-lg">
-            <Lock size={16} />
-            <span>Numbers locked until approval</span>
-          </div>
+    <div className="flex flex-col min-h-full">
+      {/* Header */}
+      <div className="bg-white px-4 pt-5 pb-3 border-b border-gray-100">
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-xl font-extrabold text-gray-900">LookingFor</h1>
+          <span className="text-xs text-gray-400">{filtered.length} requirements</span>
         </div>
-      </div>
+        <p className="text-xs text-gray-400 mb-3">Browse requirements near you</p>
 
-      {/* Filters */}
-      <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-        <button
-          onClick={() => setFilter('all')}
-          className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-            filter === 'all'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          All
-        </button>
-        <button
-          onClick={() => setFilter('real_estate')}
-          className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-            filter === 'real_estate'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          Real Estate
-        </button>
-        <button
-          onClick={() => setFilter('services')}
-          className={`px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-all ${
-            filter === 'services'
-              ? 'bg-blue-600 text-white'
-              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
-          }`}
-        >
-          Services
-        </button>
-      </div>
-
-      {/* Requirements Grid */}
-      {requirements.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl">
-          <p className="text-gray-600 text-lg">No requirements found</p>
-          <p className="text-gray-500 text-sm mt-2">Check back later or post a requirement</p>
+        {/* Search */}
+        <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-3 py-2 mb-3">
+          <Search size={14} className="text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by title or city..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="flex-1 bg-transparent text-sm outline-none text-gray-700 placeholder-gray-400"
+          />
         </div>
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {requirements.map((req) => (
-            <div key={req.id} className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-semibold">
-                        {req.category === 'real_estate' ? '🏠 Real Estate' : '💼 Services'}
-                      </span>
-                      {req.is_anonymous && (
-                        <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-semibold flex items-center gap-1">
-                          <Lock size={12} /> Anonymous
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2">{req.title}</h3>
-                  </div>
-                </div>
 
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{req.description}</p>
-
-                <div className="space-y-2 mb-4 text-sm">
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <MapPin size={16} className="flex-shrink-0" />
-                    <span>{req.area}, {req.city}</span>
-                  </div>
-                  {(req.budget_min || req.budget_max) && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <DollarSign size={16} className="flex-shrink-0" />
-                      <span>{formatBudget(req.budget_min, req.budget_max)}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <div className="flex items-center gap-4 text-xs text-gray-500">
-                    <span className="flex items-center gap-1">
-                      <Eye size={14} /> {req.views_count}
-                    </span>
-                    <span>{getTimeAgo(req.created_at)}</span>
-                  </div>
-                </div>
-
-                {user?.primary_role === 'provider' && (
-                  <button
-                    onClick={() => setSelectedRequirement(req)}
-                    className="w-full mt-4 flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-                  >
-                    <MessageSquare size={18} />
-                    Request Chat
-                  </button>
-                )}
-              </div>
-            </div>
+        {/* Filters */}
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {[
+            { id: 'all', label: 'All' },
+            { id: 'real_estate', label: '🏠 Real Estate' },
+            { id: 'services', label: '🛠 Services' },
+          ].map((f) => (
+            <button
+              key={f.id}
+              onClick={() => setFilter(f.id as any)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all ${
+                filter === f.id
+                  ? 'text-white'
+                  : 'bg-gray-100 text-gray-600'
+              }`}
+              style={filter === f.id ? { background: '#4db6ac' } : {}}
+            >
+              {f.label}
+            </button>
           ))}
         </div>
-      )}
+      </div>
 
-      {/* Chat Request Modal */}
-      {selectedRequirement && user?.primary_role === 'provider' && (
-        <ChatRequestModal
-          requirement={selectedRequirement}
-          onClose={() => setSelectedRequirement(null)}
-          onSuccess={() => {
-            setSelectedRequirement(null);
-            loadRequirements();
-          }}
-        />
-      )}
+      {/* Trust signals */}
+      <div className="flex gap-2 px-4 py-2 bg-teal-50">
+        <div className="flex items-center gap-1 text-xs text-teal-700">
+          <Shield size={12} /> You approve who contacts you
+        </div>
+        <div className="flex items-center gap-1 text-xs text-teal-700">
+          <Lock size={12} /> Numbers always locked
+        </div>
+      </div>
+
+      {/* List */}
+      <div className="flex-1 px-4 py-3 space-y-3">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500" />
+            <p className="text-gray-400 text-sm mt-3">Loading...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-xl border border-gray-100">
+            <p className="text-gray-400 text-sm">No requirements found</p>
+            <p className="text-gray-300 text-xs mt-1">Check back later</p>
+          </div>
+        ) : (
+          filtered.map((req) => (
+            <div key={req.id} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+              {/* Tags */}
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-teal-50 text-teal-700">
+                  {req.category === 'real_estate' ? '🏠 Real Estate' : '🛠 Services'}
+                </span>
+                {req.subcategory_id && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-50 text-purple-700">
+                    {req.subcategory_id}
+                  </span>
+                )}
+                {req.is_anonymous && (
+                  <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-gray-100 text-gray-500 flex items-center gap-1">
+                    <Lock size={10} /> Anonymous
+                  </span>
+                )}
+                <span className="ml-auto text-xs text-gray-300">{getTimeAgo(req.created_at)}</span>
+              </div>
+
+              {/* Title */}
+              <h3 className="font-bold text-gray-900 text-sm mb-1">{req.title}</h3>
+              <p className="text-xs text-gray-500 mb-2 line-clamp-2">{req.description}</p>
+
+              {/* Location & Budget */}
+              <div className="flex items-center gap-3 text-xs text-gray-400 mb-3">
+                <span className="flex items-center gap-1">
+                  <MapPin size={11} /> {req.area}, {req.city}
+                </span>
+                {formatBudget(req.budget_min, req.budget_max) && (
+                  <span className="font-semibold text-gray-600">
+                    {formatBudget(req.budget_min, req.budget_max)}
+                  </span>
+                )}
+              </div>
+
+              {/* Action */}
+              <div className="flex items-center justify-between">
+                {user?.id !== req.user_id && (
+                  <button
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-semibold"
+                    style={{ background: '#4db6ac' }}
+                  >
+                    <MessageSquare size={13} /> Request Chat
+                  </button>
+                )}
+                <span className="flex items-center gap-1 text-xs text-gray-300 ml-auto">
+                  <Lock size={11} /> Contact locked
+                </span>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
