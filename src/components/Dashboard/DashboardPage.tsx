@@ -1,150 +1,190 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import { BarChart3, MessageSquare, FileText, TrendingUp } from 'lucide-react';
+import { LogOut, FileText, MessageSquare, CheckCircle, Clock, Lock } from 'lucide-react';
 
-interface DashboardStats {
-  totalPosts: number;
-  activePosts: number;
-  totalChats: number;
-  acceptedChats: number;
+interface DashboardPageProps {
+  onNavigate: (tab: any) => void;
 }
 
-export function DashboardPage() {
-  const { user } = useAuth();
-  const [stats, setStats] = useState<DashboardStats>({
-    totalPosts: 0,
-    activePosts: 0,
-    totalChats: 0,
-    acceptedChats: 0,
-  });
+interface Requirement {
+  id: string;
+  title: string;
+  category: string;
+  status: string;
+  created_at: string;
+  is_anonymous: boolean;
+}
+
+export function DashboardPage({ onNavigate }: DashboardPageProps) {
+  const { user, signOut } = useAuth();
+  const [requirements, setRequirements] = useState<Requirement[]>([]);
+  const [chatStats, setChatStats] = useState({ total: 0, pending: 0, accepted: 0 });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadStats();
-  }, [user?.id]);
+    if (user) loadData();
+  }, [user]);
 
-  const loadStats = async () => {
+  const loadData = async () => {
     if (!user) return;
-
+    setLoading(true);
     try {
-      // Get posts count
-      const { count: totalPosts } = await supabase
-        .from('requirements')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id);
+      const [reqRes, chatRes] = await Promise.all([
+        supabase
+          .from('requirements')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('chat_requests')
+          .select('status')
+          .or(`requester_id.eq.${user.id},owner_id.eq.${user.id}`),
+      ]);
 
-      const { count: activePosts } = await supabase
-        .from('requirements')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('status', 'active');
+      setRequirements(reqRes.data || []);
 
-      // Get chats count
-      const { count: totalChats } = await supabase
-        .from('chat_requests')
-        .select('*', { count: 'exact', head: true })
-        .or(`seeker_id.eq.${user.id},provider_id.eq.${user.id}`);
-
-      const { count: acceptedChats } = await supabase
-        .from('chat_requests')
-        .select('*', { count: 'exact', head: true })
-        .or(`seeker_id.eq.${user.id},provider_id.eq.${user.id}`)
-        .eq('status', 'ACCEPTED');
-
-      setStats({
-        totalPosts: totalPosts || 0,
-        activePosts: activePosts || 0,
-        totalChats: totalChats || 0,
-        acceptedChats: acceptedChats || 0,
+      const chats = chatRes.data || [];
+      setChatStats({
+        total: chats.length,
+        pending: chats.filter(c => c.status === 'pending').length,
+        accepted: chats.filter(c => c.status === 'accepted').length,
       });
     } catch (err) {
-      console.error('Error loading stats:', err);
+      console.error('Error loading dashboard:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const statCards = [
-    {
-      label: 'Total Posts',
-      value: stats.totalPosts,
-      icon: FileText,
-      color: 'bg-blue-100 text-blue-600',
-    },
-    {
-      label: 'Active Posts',
-      value: stats.activePosts,
-      icon: TrendingUp,
-      color: 'bg-green-100 text-green-600',
-    },
-    {
-      label: 'Chat Requests',
-      value: stats.totalChats,
-      icon: MessageSquare,
-      color: 'bg-purple-100 text-purple-600',
-    },
-    {
-      label: 'Accepted Chats',
-      value: stats.acceptedChats,
-      icon: BarChart3,
-      color: 'bg-orange-100 text-orange-600',
-    },
-  ];
+  const getTimeAgo = (date: string) => {
+    const diff = Math.floor((Date.now() - new Date(date).getTime()) / 60000);
+    if (diff < 60) return `${diff}m ago`;
+    if (diff < 1440) return `${Math.floor(diff / 60)}h ago`;
+    return `${Math.floor(diff / 1440)}d ago`;
+  };
 
-  if (loading) {
-    return (
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-        </div>
-      </div>
-    );
-  }
+  const handleSignOut = async () => {
+    await signOut();
+  };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 mb-2">Dashboard</h2>
-        <p className="text-gray-600">Your activity overview</p>
+    <div className="flex flex-col min-h-full">
+      {/* Header */}
+      <div className="bg-white px-4 pt-5 pb-4 border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-extrabold text-gray-900">
+              {user?.name || 'My Profile'}
+            </h1>
+            <p className="text-xs text-gray-400 mt-0.5">
+              {user?.primary_role === 'seeker' ? '🔍 Seeker' : '🛠 Provider'} · +91 {user?.phone || user?.phone_number}
+            </p>
+          </div>
+          <button
+            onClick={handleSignOut}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-gray-100 text-gray-500 text-xs font-medium"
+          >
+            <LogOut size={14} /> Sign Out
+          </button>
+        </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {statCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div key={card.label} className="bg-white rounded-xl border border-gray-200 p-6">
-              <div className={`${card.color} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
-                <Icon size={24} />
+      <div className="px-4 py-4 space-y-4">
+        {/* Stats */}
+        <div className="grid grid-cols-2 gap-3">
+          {[
+            { label: 'My Posts', value: requirements.length, icon: FileText, color: 'bg-teal-50 text-teal-600' },
+            { label: 'Chat Requests', value: chatStats.total, icon: MessageSquare, color: 'bg-blue-50 text-blue-600' },
+            { label: 'Active Chats', value: chatStats.accepted, icon: CheckCircle, color: 'bg-green-50 text-green-600' },
+            { label: 'Pending', value: chatStats.pending, icon: Clock, color: 'bg-amber-50 text-amber-600' },
+          ].map((s) => (
+            <div key={s.label} className="bg-white rounded-xl border border-gray-100 p-4 shadow-sm">
+              <div className={`inline-flex p-2 rounded-lg ${s.color} mb-2`}>
+                <s.icon size={16} />
               </div>
-              <p className="text-gray-600 text-sm mb-1">{card.label}</p>
-              <p className="text-3xl font-bold text-gray-900">{card.value}</p>
+              <div className="text-2xl font-extrabold text-gray-900">{s.value}</div>
+              <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
 
-      {/* Quick Actions */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4">Quick Actions</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <p className="font-semibold text-gray-900">Manage Posts</p>
-            <p className="text-sm text-gray-600">View and edit your requirements</p>
+        {/* Plan banner */}
+        <div className="rounded-xl p-4 text-white" style={{ background: 'linear-gradient(135deg, #4db6ac, #26a69a)' }}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="font-bold text-sm">Free Plan</span>
+            <Lock size={14} className="opacity-70" />
+          </div>
+          <p className="text-xs opacity-90 mb-3">
+            1 post · 3 messages per chat · Contact locked
+          </p>
+          <button className="w-full bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg py-2 text-xs font-bold transition-all">
+            Upgrade to Premium ₹499/yr →
           </button>
-          <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <p className="font-semibold text-gray-900">View Messages</p>
-            <p className="text-sm text-gray-600">Check pending chat requests</p>
-          </button>
-          <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <p className="font-semibold text-gray-900">Upgrade Plan</p>
-            <p className="text-sm text-gray-600">Get premium features</p>
-          </button>
-          <button className="p-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <p className="font-semibold text-gray-900">Profile Settings</p>
-            <p className="text-sm text-gray-600">Update your information</p>
-          </button>
+        </div>
+
+        {/* My Posts */}
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
+            <h2 className="font-bold text-sm text-gray-900">My Requirements</h2>
+            <button
+              onClick={() => onNavigate('post')}
+              className="text-xs font-semibold px-2 py-1 rounded-lg"
+              style={{ color: '#4db6ac' }}
+            >
+              + New Post
+            </button>
+          </div>
+
+          {loading ? (
+            <div className="text-center py-8">
+              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-teal-500" />
+            </div>
+          ) : requirements.length === 0 ? (
+            <div className="text-center py-8 px-4">
+              <FileText size={28} className="text-gray-200 mx-auto mb-2" />
+              <p className="text-gray-400 text-sm">No posts yet</p>
+              <button
+                onClick={() => onNavigate('post')}
+                className="mt-3 px-4 py-2 rounded-lg text-white text-xs font-semibold"
+                style={{ background: '#4db6ac' }}
+              >
+                Post Your First Requirement
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-50">
+              {requirements.map((req) => (
+                <div key={req.id} className="flex items-center justify-between px-4 py-3">
+                  <div className="flex-1 min-w-0 mr-3">
+                    <p className="text-sm font-semibold text-gray-800 truncate">{req.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {req.category === 'real_estate' ? '🏠' : '🛠'} {getTimeAgo(req.created_at)}
+                      {req.is_anonymous && ' · 🔒 Anonymous'}
+                    </p>
+                  </div>
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${
+                    req.status === 'active'
+                      ? 'bg-teal-100 text-teal-700'
+                      : 'bg-gray-100 text-gray-500'
+                  }`}>
+                    {req.status}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Trust info */}
+        <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+          {[
+            '✅ You approve who can chat with you',
+            '✅ Your number is never shared without permission',
+            '🔒 Contact details locked until approval + premium',
+          ].map((t) => (
+            <p key={t} className="text-xs text-gray-500">{t}</p>
+          ))}
         </div>
       </div>
     </div>
