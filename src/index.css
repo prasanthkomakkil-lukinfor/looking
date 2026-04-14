@@ -1,4 +1,19 @@
+* {
+  box-sizing: border-box;
+}
 
+body {
+  margin: 0;
+  background: #f0f4f8;
+}
+
+#root {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background: #fafafa;
+  box-shadow: 0 0 40px rgba(0,0,0,0.08);
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
