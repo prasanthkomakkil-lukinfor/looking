@@ -15,7 +15,7 @@ interface CreatePostPageProps {
 export function CreatePostPage({ onPostCreated }: CreatePostPageProps) {
   const { user } = useAuth();
   const [category, setCategory] = useState<'real_estate' | 'services'>('real_estate');
-  const [subcategory, setSubcategory] = useState(CATEGORIES.real_estate[0]);
+  const [subcategory, setSubcategory] = useState('Rent');
   const [city, setCity] = useState('');
   const [area, setArea] = useState('');
   const [title, setTitle] = useState('');
@@ -42,7 +42,6 @@ export function CreatePostPage({ onPostCreated }: CreatePostPageProps) {
         user_id: user.id,
         category,
         subcategory_id: null,
-subcategory: subcategory,
         city: city.trim(),
         area: area.trim(),
         title: title.trim(),
@@ -68,7 +67,7 @@ subcategory: subcategory,
         <div className="bg-white rounded-2xl shadow-md max-w-md w-full p-8 text-center">
           <div className="text-6xl mb-4">🎉</div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Posted Successfully!</h2>
-          <p className="text-gray-500 mb-6">Providers can now see your requirement and send chat requests.</p>
+          <p className="text-gray-500 mb-6">Providers can now see your requirement.</p>
           <button onClick={onPostCreated} className="w-full py-3 rounded-xl text-white font-semibold" style={{ background: '#4db6ac' }}>
             Go to Dashboard
           </button>
@@ -78,8 +77,8 @@ subcategory: subcategory,
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
-      <div className="mb-6">
+    <div className="px-4 py-6">
+      <div className="mb-5">
         <h2 className="text-2xl font-bold text-gray-900">Post a Requirement</h2>
         <p className="text-gray-500 text-sm mt-1">Tell providers what you need</p>
       </div>
@@ -91,7 +90,6 @@ subcategory: subcategory,
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-5 space-y-4 shadow-sm">
 
-        {/* Category */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
           <div className="grid grid-cols-2 gap-3">
@@ -106,7 +104,6 @@ subcategory: subcategory,
           </div>
         </div>
 
-        {/* Subcategory */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Sub-Category</label>
           <select value={subcategory} onChange={(e) => setSubcategory(e.target.value)}
@@ -115,7 +112,6 @@ subcategory: subcategory,
           </select>
         </div>
 
-        {/* Location */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
@@ -133,7 +129,6 @@ subcategory: subcategory,
           </div>
         </div>
 
-        {/* Title */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
           <input type="text" value={title} onChange={(e) => setTitle(e.target.value)}
@@ -142,17 +137,15 @@ subcategory: subcategory,
             required />
         </div>
 
-        {/* Description */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
           <textarea value={description} onChange={(e) => setDescription(e.target.value)}
-            placeholder="Describe what you need in detail..."
+            placeholder="Describe what you need..."
             rows={3}
             className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400 resize-none"
             required />
         </div>
 
-        {/* Budget */}
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Min Budget (₹)</label>
@@ -168,10 +161,8 @@ subcategory: subcategory,
           </div>
         </div>
 
-        {/* Anonymous */}
         <label className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-          <input type="checkbox" checked={isAnonymous} onChange={(e) => setIsAnonymous(e.target.checked)}
-            className="mt-0.5" />
+          <input type="checkbox" checked={isAnonymous} onChange={(e) => setIsAnonymous(e.target.checked)} className="mt-0.5" />
           <div>
             <p className="text-sm font-semibold text-gray-800 flex items-center gap-1">
               {isAnonymous ? <EyeOff size={14} /> : <Eye size={14} />} Post Anonymously
