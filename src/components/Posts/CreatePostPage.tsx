@@ -41,7 +41,8 @@ export function CreatePostPage({ onPostCreated }: CreatePostPageProps) {
       const { error: insertError } = await supabase.from('requirements').insert({
         user_id: user.id,
         category,
-        subcategory_id: subcategory,
+        subcategory_id: null,
+subcategory: subcategory,
         city: city.trim(),
         area: area.trim(),
         title: title.trim(),
