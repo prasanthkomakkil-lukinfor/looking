@@ -107,8 +107,8 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
   }
 
   return (
-    <div className="px-4 py-6 sm:px-6 md:px-8">
-      <div className="max-w-3xl mx-auto">
+    <div className="w-full px-3 py-4 sm:px-6 sm:py-6 md:px-8">
+      <div className="w-full max-w-2xl mx-auto">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">Post a Requirement</h2>
         <p className="text-gray-400 text-sm mb-4">Tell providers what you need</p>
 
@@ -123,13 +123,13 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
         >
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {(['real_estate', 'services'] as const).map((cat) => (
                 <button
                   key={cat}
                   type="button"
                   onClick={() => handleCategoryChange(cat)}
-                  className={`p-3 rounded-lg border-2 text-sm font-medium ${
+                  className={`p-3 rounded-lg border-2 text-sm font-medium whitespace-normal break-words ${
                     category === cat
                       ? 'border-teal-400 bg-teal-50 text-teal-700'
                       : 'border-gray-200 text-gray-600'
@@ -156,7 +156,7 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
             </select>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
               <select
@@ -211,7 +211,7 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
             />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Min Budget (₹)</label>
               <input
