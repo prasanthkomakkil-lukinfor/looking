@@ -32,13 +32,14 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
-    setError(''); setLoading(true);
+    setError('');
+    setLoading(true);
     try {
       const { error: err } = await supabase.from('requirements').insert({
         user_id: user.id,
         category,
-        subcategory: subcategory,
-        city: city,
+        subcategory,
+        city,
         area: area.trim(),
         title: title.trim(),
         description: description.trim(),
@@ -53,7 +54,9 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
       setTimeout(() => onPostCreated(), 1500);
     } catch (e: any) {
       setError(e.message || 'Failed to create post');
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (success) return (
@@ -62,7 +65,9 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
         <div className="text-6xl mb-4">🎉</div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Posted!</h2>
         <p className="text-gray-500 mb-6">Providers can now see your requirement.</p>
-        <button onClick={onPostCreated} className="w-full py-3 rounded-xl text-white font-semibold" style={{background:'#4db6ac'}}>Go to Dashboard</button>
+        <button onClick={onPostCreated} className="w-full py-3 rounded-xl text-white font-semibold" style={{background:'#4db6ac'}}>
+          Go to Dashboard
+        </button>
       </div>
     </div>
   );
@@ -75,13 +80,3 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
         <Shield className="text-teal-600 flex-shrink-0" size={14}/>
         <p className="text-xs text-teal-800">You approve who contacts you. No spam.</p>
       </div>
-      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-4 space-y-4 shadow-sm">
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
-          <div className="grid grid-cols-2 gap-2">
-            {(['real_estate','services'] as const).map(cat => (
-              <button key={cat} type="button" onClick={() => handleCategoryChange(cat)}
-                className={`p-3 rounded-lg border-2 text-sm font-medium ${category===cat?'border-teal-400 bg-teal-50 text-teal-700':'border-gray-200 text-gray-600'}`}>
-                {cat==='real_estate'?'🏠 Real Estate':'🛠 Services'}
-              </button>
-            ))}
