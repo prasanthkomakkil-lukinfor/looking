@@ -35,13 +35,18 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
     setError(''); setLoading(true);
     try {
       const { error: err } = await supabase.from('requirements').insert({
-        user_id: user.id, category,
-        subcategory_id: null,
-        city, area: area.trim(), title: title.trim(),
+        user_id: user.id,
+        category,
+        subcategory: subcategory,
+        city: city,
+        area: area.trim(),
+        title: title.trim(),
         description: description.trim(),
+        location: `${area.trim()}, ${city}`,
         budget_min: budgetMin ? parseFloat(budgetMin) : null,
         budget_max: budgetMax ? parseFloat(budgetMax) : null,
-        is_anonymous: isAnonymous, status: 'active',
+        is_anonymous: isAnonymous,
+        status: 'active',
       });
       if (err) throw err;
       setSuccess(true);
