@@ -80,3 +80,88 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
         <Shield className="text-teal-600 flex-shrink-0" size={14}/>
         <p className="text-xs text-teal-800">You approve who contacts you. No spam.</p>
       </div>
+      <form onSubmit={handleSubmit} className="bg-white rounded-xl border border-gray-200 p-4 space-y-4 shadow-sm">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
+          <div className="grid grid-cols-2 gap-2">
+            {(['real_estate','services'] as const).map(cat => (
+              <button key={cat} type="button" onClick={() => handleCategoryChange(cat)}
+                className={`p-3 rounded-lg border-2 text-sm font-medium ${category===cat?'border-teal-400 bg-teal-50 text-teal-700':'border-gray-200 text-gray-600'}`}>
+                {cat==='real_estate'?'🏠 Real Estate':'🛠 Services'}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Sub-Category</label>
+          <select value={subcategory} onChange={e=>setSubcategory(e.target.value)}
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400">
+            {CATEGORIES[category].map(s=><option key={s} value={s}>{s}</option>)}
+          </select>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">City</label>
+            <select value={city} onChange={e=>setCity(e.target.value)} required
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400">
+              <option value="">Select city</option>
+              {CITIES.map(c=><option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Area</label>
+            <input type="text" value={area} onChange={e=>setArea(e.target.value)}
+              placeholder="e.g. Mannarkkad" required
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400"/>
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
+          <input type="text" value={title} onChange={e=>setTitle(e.target.value)}
+            placeholder="What are you looking for?" required
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400"/>
+        </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">Description</label>
+          <textarea value={description} onChange={e=>setDescription(e.target.value)}
+            placeholder="Describe what you need..." rows={3} required
+            className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400 resize-none"/>
+        </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Min Budget (₹)</label>
+            <input type="number" value={budgetMin} onChange={e=>setBudgetMin(e.target.value)}
+              placeholder="Optional" min="0"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400"/>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Max Budget (₹)</label>
+            <input type="number" value={budgetMax} onChange={e=>setBudgetMax(e.target.value)}
+              placeholder="Optional" min="0"
+              className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400"/>
+          </div>
+        </div>
+        <label className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="checkbox" checked={isAnonymous} onChange={e=>setIsAnonymous(e.target.checked)} className="mt-0.5"/>
+          <div>
+            <p className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+              {isAnonymous?<EyeOff size={14}/>:<Eye size={14}/>} Post Anonymously
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">Your name and phone won't be visible</p>
+          </div>
+        </label>
+        {error && (
+          <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg text-sm flex gap-2">
+            <AlertCircle size={16} className="flex-shrink-0"/>
+            <span>{error}</span>
+          </div>
+        )}
+        <button type="submit" disabled={loading}
+          className="w-full py-3 rounded-xl text-white font-semibold text-sm disabled:opacity-50"
+          style={{background:'#4db6ac'}}>
+          {loading?'Posting...':'Post Requirement'}
+        </button>
+      </form>
+    </div>
+  );
+}
