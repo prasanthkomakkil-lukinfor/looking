@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Eye, EyeOff, AlertCircle, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-
+//city changes//
 const CITIES = [
   'Mumbai',
   'Pune',
