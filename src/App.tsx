@@ -3,7 +3,6 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WhatsAppLogin } from './components/Auth/WhatsAppLogin';
 import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
 import { MainLayout } from './components/Layout/MainLayout';
-import { AdminLayout } from './components/Admin/AdminLayout';
 
 function AppContent() {
   const { user, loading } = useAuth();
@@ -29,10 +28,6 @@ function AppContent() {
 
   if (!user) {
     return <WhatsAppLogin onLoginSuccess={() => {}} />;
-  }
-
-  if (user.is_admin) {
-    return <AdminLayout />;
   }
 
   if (!hasCompletedOnboarding) {
