@@ -113,4 +113,21 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
             <label className="block text-sm font-semibold text-gray-700 mb-2">Max Budget (₹)</label>
             <input type="number" value={budgetMax} onChange={e=>setBudgetMax(e.target.value)} placeholder="Optional" min="0" className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400"/>
           </div>
-        </div
+        </div>
+        <label className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
+          <input type="checkbox" checked={isAnonymous} onChange={e=>setIsAnonymous(e.target.checked)} className="mt-0.5"/>
+          <div>
+            <p className="text-sm font-semibold text-gray-800 flex items-center gap-1">
+              {isAnonymous?<EyeOff size={14}/>:<Eye size={14}/>} Post Anonymously
+            </p>
+            <p className="text-xs text-gray-500 mt-0.5">Your name and phone won't be visible</p>
+          </div>
+        </label>
+        {error && <div className="bg-red-50 text-red-600 px-3 py-2 rounded-lg text-sm">{error}</div>}
+        <button type="submit" disabled={loading} className="w-full py-3 rounded-xl text-white font-semibold text-sm disabled:opacity-50" style={{background:'#4db6ac'}}>
+          {loading?'Posting...':'Post Requirement'}
+        </button>
+      </form>
+    </div>
+  );
+}
