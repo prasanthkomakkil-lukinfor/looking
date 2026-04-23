@@ -5,7 +5,7 @@ import { HomePage } from '../Home/HomePage';
 import { CreatePostPage } from '../Posts/CreatePostPage';
 import { ChatsPage } from '../Chat/ChatsPage';
 import { DashboardPage } from '../Dashboard/DashboardPage';
-import { AdminLayout } from '../Admin/AdminLayout';
+
 
 type Tab = 'home' | 'post' | 'chats' | 'dashboard';
 
@@ -14,9 +14,7 @@ export function MainLayout() {
   const [activeTab, setActiveTab] = useState<Tab>('home');
 
   // ✅ Admin check here now
-  if (user?.is_admin) {
-    return <AdminLayout />;
-  }
+
 
   const renderContent = () => {
     switch (activeTab) {
