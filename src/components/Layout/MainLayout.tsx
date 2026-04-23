@@ -13,7 +13,7 @@ export function MainLayout() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('home');
 
-  // ✅ Admin check here
+  // ✅ Admin check here now
   if (user?.is_admin) {
     return <AdminLayout />;
   }
