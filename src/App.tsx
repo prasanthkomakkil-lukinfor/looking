@@ -3,7 +3,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { WhatsAppLogin } from './components/Auth/WhatsAppLogin';
 import { OnboardingFlow } from './components/Onboarding/OnboardingFlow';
 import { MainLayout } from './components/Layout/MainLayout';
-import { AdminLayout } from './components/Admin/Adminlayout';
+import { AdminLayout } from './components/Admin/AdminLayout';
 
 function AppContent() {
   const { user, loading } = useAuth();
