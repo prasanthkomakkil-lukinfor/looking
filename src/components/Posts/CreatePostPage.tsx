@@ -113,7 +113,7 @@ export function CreatePostPage({ onPostCreated }: { onPostCreated: () => void })
             <label className="block text-sm font-semibold text-gray-700 mb-2">Max Budget (₹)</label>
             <input type="number" value={budgetMax} onChange={e=>setBudgetMax(e.target.value)} placeholder="Optional" min="0" className="w-full px-3 py-2.5 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-teal-400"/>
           </div>
-        </div>
+    </div>
         <label className="flex items-start gap-3 p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
           <input type="checkbox" checked={isAnonymous} onChange={e=>setIsAnonymous(e.target.checked)} className="mt-0.5"/>
           <div>
