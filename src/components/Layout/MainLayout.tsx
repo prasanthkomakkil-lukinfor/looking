@@ -532,7 +532,12 @@ function AdminPanel() {
   const [section, setSection] = useState<AdminTab>('requirements');
   const [stats, setStats] = useState({users:0,requirements:0,pending:0,chats:0});
   const [showSidebar, setShowSidebar] = useState(false);
-  const isMobile = window.innerWidth < 768;
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 768);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, []);
 
   useEffect(()=>{
     Promise.all([
