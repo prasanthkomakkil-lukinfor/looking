@@ -473,7 +473,7 @@ function BroadcastSection() {
                 </div>
               </div>
               <div style={{marginBottom:14}}>
-                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:6}}>Message <span style={{color:'#94a3b8',fontWeight:400'}}>(use {'{name}'} to personalize)</span></div>
+                <div style={{fontSize:11,fontWeight:700,color:'#64748b',marginBottom:6}}>Message <span style={{color:'#94a3b8',fontWeight:400}}>(use {'{name}'} to personalize)</span></div>
                 <textarea value={message} onChange={e=>setMessage(e.target.value)} rows={5} placeholder="Type your message..." style={{width:'100%',border:'1px solid #e2e8f0',borderRadius:8,padding:'10px 12px',fontSize:12,outline:'none',resize:'none',boxSizing:'border-box' as const}}/>
                 <div style={{fontSize:10,color:'#94a3b8',marginTop:2}}>{message.length}/500</div>
               </div>
